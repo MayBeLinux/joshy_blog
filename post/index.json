@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "nixos",
+    "title": "NixOS: A Different Way to Think About Your System",
+    "date": "2026-04-15",
+    "description": "How a purely functional Linux distribution challenges everything you know about package management and system configuration.",
+    "tags": ["linux", "nix", "devops"],
+    "readTime": "8 min"
+  },
+  {
+    "slug": "gpu",
+    "title": "How GPUs Actually Work",
+    "date": "2026-03-28",
+    "description": "A deep dive into GPU architecture — from shader cores and warp scheduling to memory hierarchies and why they're so good at parallel computation.",
+    "tags": ["hardware", "graphics", "architecture"],
+    "readTime": "12 min"
+  },
+  {
+    "slug": "paradigmes",
+    "title": "Programming Paradigms: Beyond Object-Oriented",
+    "date": "2026-03-10",
+    "description": "An exploration of functional, logic, and declarative paradigms — and why knowing more than one way to think about code makes you a better programmer.",
+    "tags": ["programming", "theory", "functional"],
+    "readTime": "10 min"
+  }
+]
