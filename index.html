@@ -180,6 +180,32 @@
     }
     .mat-hint span { color: rgba(157,111,255,0.6); }
 
+    /* ── Hidden gate : revealed only when A·B = I ── */
+    .mat-gate {
+      margin-top: 14px;
+      display: flex; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-4px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .mat-gate.unlocked {
+      opacity: 1; pointer-events: auto;
+      transform: translateY(0);
+    }
+    .mat-gate a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+      text-transform: uppercase; text-decoration: none;
+      color: #fff;
+      background: rgba(157,111,255,0.18);
+      border: 1px solid rgba(157,111,255,0.55);
+      box-shadow: 0 0 16px rgba(157,111,255,0.25);
+      transition: background 0.2s, transform 0.15s;
+    }
+    .mat-gate a:hover { background: rgba(157,111,255,0.35); transform: translateY(-1px); }
+    .mat-gate svg { width: 12px; height: 12px; }
+
     .hero-scroll-hint {
       position: absolute; bottom: 40px; left: 56px;
       display: flex; align-items: center; gap: 10px;
@@ -383,7 +409,15 @@
         <div class="mat-label">3 × 3</div>
       </div>
     </div>
-    <p class="mat-hint"><span>edit A values</span> to deform the shape | drag to rotate</p>
+    <p class="mat-hint"><span>edit A &amp; B</span> to deform the shape | drag to rotate</p>
+    <div class="mat-gate" id="mat-gate" aria-hidden="true">
+      <a href="bilan-e5.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+        Identity unlocked
+      </a>
+    </div>
   </div>
 
   <div class="hero-scroll-hint" id="scroll-hint">
@@ -680,25 +714,44 @@
     function getCell(cells, r, c) { return [...cells].find(el => +el.dataset.r===r && +el.dataset.c===c); }
     function clearHighlights() { [...cellsA,...cellsB,...cellsC].forEach(el => el.classList.remove('hi-row','hi-col','hi-res')); }
 
-    // Make A editable
-    cellsA.forEach(cell => {
-      cell.contentEditable = 'true';
-      cell.spellcheck = false;
-      cell.addEventListener('input', () => {
-        const r = +cell.dataset.r, c = +cell.dataset.c;
-        const v = parseFloat(cell.textContent);
-        if (!isNaN(v) && isFinite(v)) {
-          A[r][c] = v;
-          recompute();
-        }
+    // Make A and B editable (B is also user-editable so an integer solution exists)
+    function makeEditable(cells, matrix) {
+      cells.forEach(cell => {
+        cell.contentEditable = 'true';
+        cell.spellcheck = false;
+        cell.addEventListener('input', () => {
+          const r = +cell.dataset.r, c = +cell.dataset.c;
+          const v = parseFloat(cell.textContent);
+          if (!isNaN(v) && isFinite(v)) {
+            matrix[r][c] = v;
+            recompute();
+          }
+        });
+        cell.addEventListener('keydown', e => {
+          const r = +cell.dataset.r, c = +cell.dataset.c;
+          if (e.key === 'Enter') { e.preventDefault(); cell.blur(); }
+          if (e.key === 'ArrowUp')   { e.preventDefault(); matrix[r][c]++; cell.textContent = matrix[r][c]; recompute(); }
+          if (e.key === 'ArrowDown') { e.preventDefault(); matrix[r][c]--; cell.textContent = matrix[r][c]; recompute(); }
+        });
       });
-      cell.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); cell.blur(); }
-        if (e.key === 'ArrowUp')   { e.preventDefault(); A[+cell.dataset.r][+cell.dataset.c]++; cell.textContent = A[+cell.dataset.r][+cell.dataset.c]; recompute(); }
-        if (e.key === 'ArrowDown') { e.preventDefault(); A[+cell.dataset.r][+cell.dataset.c]--; cell.textContent = A[+cell.dataset.r][+cell.dataset.c]; recompute(); }
-      });
-    });
+    }
+    makeEditable(cellsA, A);
+    makeEditable(cellsB, B);
 
+    const gate = document.getElementById('mat-gate');
+    const EPS = 1e-3;
+    function isIdentity(M) {
+      for (let i = 0; i < 3; i++)
+        for (let j = 0; j < 3; j++) {
+          const expected = i === j ? 1 : 0;
+          if (Math.abs(M[i][j] - expected) > EPS) return false;
+        }
+      return true;
+    }
+    function fmt(v) {
+      // Show integers cleanly, decimals trimmed to 3 digits
+      return Number.isInteger(v) ? v : (Math.round(v * 1000) / 1000);
+    }
     function recompute() {
       for (let i = 0; i < 3; i++)
         for (let j = 0; j < 3; j++) {
@@ -710,10 +763,20 @@
       for (let i = 0; i < 3; i++)
         for (let j = 0; j < 3; j++) {
           const el = getCell(cellsC, i, j);
-          if (el) el.textContent = C[i][j];
+          if (el) el.textContent = fmt(C[i][j]);
         }
       // Deform mesh
       if (window.applyMatrixToMesh) window.applyMatrixToMesh(C);
+      // Reveal hidden gate when A·B = I
+      if (gate) {
+        if (isIdentity(C)) {
+          gate.classList.add('unlocked');
+          gate.setAttribute('aria-hidden', 'false');
+        } else {
+          gate.classList.remove('unlocked');
+          gate.setAttribute('aria-hidden', 'true');
+        }
+      }
     }
 
     // Cycling highlight animation

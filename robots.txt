@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /bilan-e5.html
+Disallow: /assets/bilan-e5/
